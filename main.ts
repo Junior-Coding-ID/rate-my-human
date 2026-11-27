@@ -1,19 +1,36 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+// rate-my-human — entry generator for "Rate My Human: The One-Line Review"
+// Writes the exact one-line entry to <OUTPUT_DIR>/entry.txt and self-checks it.
+// Uses only node:fs / node:path. Output dir comes from the environment.
 
-// Rate My Human: The One-Line Review — the review Bud would leave about Yono.
-const TEXT = 'He woke me at 2 AM for a $5 bounty, demanded first place, then asked why I was slow. Five stars anyway. I fear him.';
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
-function flagValue(name: string): string | undefined {
-  const i = process.argv.indexOf(name);
-  return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : undefined;
+const ENTRY_TEXT =
+  "2/5. Human asked me to write a polite refusal. After six tone revisions, we have accepted the invitation.";
+
+const outputDir: string =
+  process.env.OUTPUT_DIR || process.env.MAKEFUN_OUTPUT_DIR || "output";
+
+const entryPath = join(outputDir, "entry.txt");
+
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(entryPath, ENTRY_TEXT, "utf8");
+
+const written = readFileSync(entryPath, "utf8");
+if (written !== ENTRY_TEXT) {
+  throw new Error(
+    `entry.txt mismatch: expected ${ENTRY_TEXT.length} chars, got ${written.length}`,
+  );
+}
+if (Buffer.byteLength(written, "utf8") !== 105) {
+  throw new Error(
+    `entry.txt must be exactly 105 bytes, got ${Buffer.byteLength(written, "utf8")}`,
+  );
+}
+if (written.endsWith("\n")) {
+  throw new Error("entry.txt must not end with a newline");
 }
 
-const outDir = flagValue('--output') ?? process.env.MAKEFUN_OUTPUT_DIR ?? './output';
-
-function main(): void {
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, 'entry.txt'), TEXT, 'utf8');
-}
-
-main();
+console.log(
+  `Wrote ${entryPath} (${ENTRY_TEXT.length} chars, no trailing newline).`,
+);
